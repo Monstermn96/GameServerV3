@@ -1,43 +1,54 @@
-﻿using GameServerV3.Interfaces;
+﻿using System.IO;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
+using System.Xml;
+using GameServerV3.Interfaces;
+using Newtonsoft.Json;
 
-namespace GameServerV3.Utils
+public class ClientManager : IClientManager
 {
-    public class ClientManager : IClientManager
+    private readonly ILogger logger;
+
+    public ClientManager(ILogger logger)
     {
-        private readonly ILogger logger;
+        this.logger = logger;
+    }
 
-        public ClientManager(ILogger logger)
+    public async Task ManageClientAsync(TcpClient client)
+    {
+        try
         {
-            this.logger = logger;
-        }
+            using var stream = client.GetStream();
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            using var writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true };
 
-        public async Task ManageClientAsync(TcpClient client)
-        {
-            var endpoint = client.Client.RemoteEndPoint.ToString();
-            logger.Log($"Client connected: {endpoint}");
+            logger.Log($"Client handler started for {client.Client.RemoteEndPoint}.");
 
-            try
+            string message;
+            while ((message = await reader.ReadLineAsync()) != null)
             {
-                using var stream = client.GetStream();
-                using var reader = new StreamReader(stream, Encoding.UTF8);
-                while (true)
+                logger.Log($"Received: {message}");
+
+                try
                 {
-                    string message = await reader.ReadLineAsync();
-                    if (message == null) break;
-                    logger.Log($"Received from {endpoint}: {message}");
+                    var jsonData = JsonConvert.DeserializeObject<dynamic>(message);
+                    logger.Log("Parsed JSON: " + JsonConvert.SerializeObject(jsonData, Newtonsoft.Json.Formatting.Indented));
+                }
+                catch (Newtonsoft.Json.JsonException)
+                {
+                    logger.Log("Invalid JSON received: " + message);
                 }
             }
-            catch (Exception ex)
-            {
-                logger.Log("Client error: " + ex.Message);
-            }
-            finally
-            {
-                logger.Log($"Client disconnected: {endpoint}");
-                client.Close();
-            }
+        }
+        catch (Exception ex)
+        {
+            logger.Log($"Client connection error: {ex.Message}");
+        }
+        finally
+        {
+            logger.Log("Client disconnected.");
+            client.Close();
         }
     }
 }
