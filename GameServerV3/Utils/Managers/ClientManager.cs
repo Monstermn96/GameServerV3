@@ -1,18 +1,25 @@
 ﻿using System.IO;
 using System.Net.Sockets;
+using System.Numerics;
 using System.Text;
 using System.Text.Json;
 using System.Xml;
+using GameServerV3.Entities;
 using GameServerV3.Interfaces;
+using GameServerV3.Interfaces.Manager;
 using Newtonsoft.Json;
 
 public class ClientManager : IClientManager
 {
     private readonly ILogger logger;
+    private readonly IGameStateManager gameStateManager;
+    private readonly INetworkManager networkManager;
 
-    public ClientManager(ILogger logger)
+    public ClientManager(ILogger logger, IGameStateManager gameStateManager, INetworkManager networkManager)
     {
         this.logger = logger;
+        this.gameStateManager = gameStateManager;
+        this.networkManager = networkManager;
     }
 
     public async Task ManageClientAsync(TcpClient client)
@@ -33,7 +40,24 @@ public class ClientManager : IClientManager
                 try
                 {
                     var jsonData = JsonConvert.DeserializeObject<dynamic>(message);
-                    logger.Log("Parsed JSON: " + JsonConvert.SerializeObject(jsonData, Newtonsoft.Json.Formatting.Indented));
+                    var type = jsonData.Type;
+                    if (type == "Player")
+                    {
+                        var player = JsonConvert.DeserializeObject<Player>(message);
+                        gameStateManager.AddPlayer(player.UserName, player);
+                        logger.Log($"Player Added: {player.UserName}");
+                        networkManager.BroadcastJsonMessageAsync(player);
+                    }
+                    if (type == "Bullet")
+                    {
+                        var bullet = JsonConvert.DeserializeObject<Bullet>(message);
+                        gameStateManager.AddBullet(bullet);
+
+                        networkManager.BroadcastJsonMessageAsync(bullet);
+                        logger.Log($"BULLET ADDED TO STATE");
+                    }
+
+                    
                 }
                 catch (Newtonsoft.Json.JsonException)
                 {

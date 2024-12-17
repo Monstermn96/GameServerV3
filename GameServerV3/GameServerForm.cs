@@ -1,5 +1,6 @@
 // GameServerForm.cs
 using GameServerV3.Interfaces;
+using GameServerV3.Interfaces.Manager;
 using System;
 using System.Windows.Forms;
 

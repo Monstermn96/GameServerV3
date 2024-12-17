@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
 
-namespace GameServerV3.Interfaces
+namespace GameServerV3.Interfaces.Manager
 {
     public interface IClientManager
     {

@@ -1,7 +1,9 @@
 // Program.cs
 using System;
 using System.Windows.Forms;
+using GameServerV3.Entities;
 using GameServerV3.Interfaces;
+using GameServerV3.Interfaces.Manager;
 using GameServerV3.Utils;
 using GameServerV3.Utils.Managers;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,18 +27,16 @@ namespace GameServerV3
         {
             var services = new ServiceCollection();
             services.AddSingleton<ILogger, Logger>();
+            services.AddSingleton<IGameState, GameState>();
+            services.AddSingleton<IGameStateManager, GameStateManager>();
             services.AddSingleton<INetworkManager, NetworkManager>();
             services.AddTransient<IClientManager, ClientManager>();
-
-            // Register a factory for IClientManager
             services.AddTransient<Func<IClientManager>>(provider =>
             {
                 return () => provider.GetRequiredService<IClientManager>();
             });
-
             services.AddTransient<GameServerForm>();
             return services;
         }
-
     }
 }
