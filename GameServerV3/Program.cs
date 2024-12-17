@@ -1,6 +1,7 @@
 // Program.cs
 using System;
 using System.Windows.Forms;
+using GameServerV3.Entities;
 using GameServerV3.Interfaces;
 using GameServerV3.Utils;
 using GameServerV3.Utils.Managers;
@@ -27,6 +28,7 @@ namespace GameServerV3
             services.AddSingleton<ILogger, Logger>();
             services.AddSingleton<INetworkManager, NetworkManager>();
             services.AddTransient<IClientManager, ClientManager>();
+            services.AddSingleton<IGameState, GameState>();
 
             // Register a factory for IClientManager
             services.AddTransient<Func<IClientManager>>(provider =>
